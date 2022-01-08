@@ -6,7 +6,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/pacedotdev/oto/otohttp"
+	"github.com/damejeras/gorpc/otohttp"
 )
 
 // GreeterService is a polite API for greeting people.

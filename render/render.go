@@ -7,10 +7,10 @@ import (
 	"html/template"
 	"strings"
 
+	"github.com/damejeras/gorpc/parser"
 	"github.com/fatih/structtag"
 	"github.com/gobuffalo/plush"
 	"github.com/markbates/inflect"
-	"github.com/pacedotdev/oto/parser"
 	"github.com/pkg/errors"
 )
 

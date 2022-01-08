@@ -1,3 +1,7 @@
+# goRPC
+
+Opinionated fork of pacedotdev/oto
+
 ![Welcome to oto project](oto-logo.png)
 
 Go driven rpc code generation tool for right now.
@@ -32,7 +36,7 @@ These templates are already being used in production.
 Install the project:
 
 ```
-go install github.com/pacedotdev/oto@latest
+go install github.com/damejeras/gorpc@latest
 ```
 
 Create a project folder, and write your service definition as a Go interface:
@@ -71,23 +75,23 @@ mkdir templates \
     && wget https://raw.githubusercontent.com/pacedotdev/oto/master/otohttp/templates/client.js.plush -q -O ./templates/client.js.plush
 ```
 
-Use the `oto` tool to generate a client and server:
+Use the `gorpc` tool to generate a client and server:
 
 ```bash
 mkdir generated
-oto -template ./templates/server.go.plush \
-    -out ./generated/oto.gen.go \
+gorpc -template ./templates/server.go.plush \
+    -out ./generated/gorpc.gen.go \
     -ignore Ignorer \
     -pkg generated \
     ./definitions
-gofmt -w ./generated/oto.gen.go ./generated/oto.gen.go
-oto -template ./templates/client.js.plush \
-    -out ./generated/oto.gen.js \
+gofmt -w ./generated/gorpc.gen.go ./generated/gorpc.gen.go
+gorpc -template ./templates/client.js.plush \
+    -out ./generated/gorpc.gen.js \
     -ignore Ignorer \
     ./definitions
 ```
 
-- Run `oto -help` for more information about these flags
+- Run `gorpc -help` for more information about these flags
 
 Implement the service in Go:
 
@@ -116,7 +120,7 @@ package main
 func main() {
     g := GreeterService{}
     server := otohttp.NewServer()
-    server.Basepath = "/oto/"
+    server.Basepath = "/gorpc/"
     generated.RegisterGreeterService(server, g)
     http.Handle(server.Basepath, server)
     log.Fatal(http.ListenAndServe(":8080", nil))
@@ -128,7 +132,7 @@ func main() {
 Use the generated client to access the service in JavaScript:
 
 ```javascript
-import { GreeterService } from "oto.gen.js";
+import { GreeterService } from "gorpc.gen.js";
 
 const greeterService = new GreeterService();
 
@@ -160,9 +164,9 @@ type Thing struct {
 You can provide strings to your templates via the `-params` flag:
 
 ```bash
-oto \
+gorpc \
     -template ./templates/server.go.plush \
-    -out ./oto.gen.go \
+    -out ./gorpc.gen.go \
     -params "key1:value1,key2:value2" \
     ./path/to/definition
 ```

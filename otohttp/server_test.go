@@ -17,7 +17,7 @@ func TestServer(t *testing.T) {
 	})
 	srv.Register("Service", "Method", h)
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/oto/Service.Method", strings.NewReader(`{"name":"Mat"}`))
+	r := httptest.NewRequest(http.MethodPost, "/gorpc/Service.Method", strings.NewReader(`{"name":"Mat"}`))
 	srv.ServeHTTP(w, r)
 	is.Equal(w.Code, http.StatusOK)
 	is.Equal(w.Body.String(), `{"greeting":"Hi Mat"}`)
@@ -46,7 +46,7 @@ func TestEncode(t *testing.T) {
 		Greeting: "Hi there",
 	}
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/oto/Service.Method", strings.NewReader(`{"name":"Mat"}`))
+	r := httptest.NewRequest(http.MethodPost, "/gorpc/Service.Method", strings.NewReader(`{"name":"Mat"}`))
 	err := Encode(w, r, http.StatusOK, data)
 	is.NoErr(err)
 	is.Equal(w.Code, http.StatusOK)

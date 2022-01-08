@@ -12,10 +12,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Server handles oto requests.
+// Server handles gorpc requests.
 type Server struct {
 	// Basepath is the path prefix to match.
-	// Default: /oto/
+	// Default: /gorpc/
 	Basepath string
 
 	routes map[string]http.Handler
@@ -29,7 +29,7 @@ type Server struct {
 // NewServer makes a new Server.
 func NewServer() *Server {
 	return &Server{
-		Basepath: "/oto/",
+		Basepath: "/gorpc/",
 		routes:   make(map[string]http.Handler),
 		OnErr: func(w http.ResponseWriter, r *http.Request, err error) {
 			errObj := struct {

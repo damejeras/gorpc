@@ -12,7 +12,10 @@
 *.out
 
 # binary
-oto
+gorpc
 .DS_Store
 dist
 example/swift/SwiftCLIExample/SwiftCLIExample.xcodeproj/project.xcworkspace/xcuserdata/
+
+# IDE
+.idea

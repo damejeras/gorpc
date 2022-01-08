@@ -1,4 +1,4 @@
-module github.com/pacedotdev/oto
+module github.com/damejeras/gorpc
 
 go 1.16
 

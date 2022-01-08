@@ -8,9 +8,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/damejeras/gorpc/parser"
+	"github.com/damejeras/gorpc/render"
 	"github.com/dustin/go-humanize"
-	"github.com/pacedotdev/oto/parser"
-	"github.com/pacedotdev/oto/render"
 	"github.com/pkg/errors"
 )
 
@@ -28,13 +28,13 @@ func run(stdout io.Writer, args []string) error {
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	flags.Usage = func() {
 		fmt.Println(args[0] + " " + Version + ` usage:
-	oto [flags] paths [[path2] [path3]...]`)
+	gorpc [flags] paths [[path2] [path3]...]`)
 		fmt.Println(`
 flags:`)
 		flags.PrintDefaults()
 	}
 	var (
-		template   = flags.String("template", "", "plush template to render")
+		template   = flags.String("template", "", "go template to render")
 		outfile    = flags.String("out", "", "output file (default: stdout)")
 		pkg        = flags.String("pkg", "", "explicit package name (default: inferred)")
 		v          = flags.Bool("v", false, "verbose output")
@@ -60,7 +60,7 @@ flags:`)
 	}
 	p.Verbose = *v
 	if p.Verbose {
-		fmt.Println("oto - github.com/pacedotdev/oto", Version)
+		fmt.Println("gorpc - github.com/damejeras/gorpc", Version)
 	}
 	def, err := p.Parse()
 	if err != nil {

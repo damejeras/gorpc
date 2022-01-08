@@ -6,6 +6,6 @@ type Page struct {
 	Cursor string
 	// OrderField is the field to use to order the results.
 	OrderField string
-	// OrderAsc is whether to order the field in an ascending order or not.
+	// OrderAsc is whether to order the field in ascending order or not.
 	OrderAsc bool
 }

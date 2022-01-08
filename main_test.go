@@ -12,7 +12,7 @@ func Test(t *testing.T) {
 	is := is.New(t)
 	var buf bytes.Buffer
 	args := []string{
-		"oto",
+		"gorpc",
 		"-template=./testdata/template.plush",
 		"-pkg=stuff",
 		"./testdata/services/pleasantries",

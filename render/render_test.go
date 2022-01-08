@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/damejeras/gorpc/parser"
 	"github.com/matryer/is"
-	"github.com/pacedotdev/oto/parser"
 )
 
 func TestRender(t *testing.T) {
