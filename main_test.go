@@ -13,7 +13,7 @@ func Test(t *testing.T) {
 	var buf bytes.Buffer
 	args := []string{
 		"gorpc",
-		"-template=./testdata/template.plush",
+		"-template=./testdata/test.tmpl",
 		"-pkg=stuff",
 		"./testdata/services/pleasantries",
 	}

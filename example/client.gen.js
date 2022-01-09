@@ -2,16 +2,14 @@
 
 'use strict';
 
- 
 class GreeterService {
-	
-	async greet(greetRequest) {
-		const headers = {
+    async greet(greetRequest) {
+        const headers = {
 			'Accept':		'application/json',
 			'Accept-Encoding':	'gzip',
 			'Content-Type':		'application/json',
-		}
-		greetRequest = greetRequest || {}
+        }
+        greetRequest = greetRequest || {}
 		const response = await fetch('/gorpc/GreeterService.Greet', {
 			method: 'POST',
 			headers: headers,
@@ -23,7 +21,5 @@ class GreeterService {
 			}
 			return json
 		})
-	}
-	
+    }
 }
-

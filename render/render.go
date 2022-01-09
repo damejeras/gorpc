@@ -28,7 +28,7 @@ func Render(template string, def parser.Definition, params map[string]interface{
 	ctx.Set("format_comment_text", formatCommentText)
 	ctx.Set("format_comment_html", formatCommentHTML)
 	ctx.Set("format_tags", formatTags)
-	s, err := plush.Render(string(template), ctx)
+	s, err := plush.Render(template, ctx)
 	if err != nil {
 		return "", err
 	}

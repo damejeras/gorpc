@@ -9,22 +9,22 @@ class OtoClient {
 	}
 }
 
-<%= for (service) in def.Services { %>
-<%= format_comment_text(service.Comment) %>class <%= service.Name %> {
+{{ range $service := .Services }}
+{{ format_comment_text $service.Comment }}class {{ $service.Name }} {
 	var client: OtoClient
 	init(withClient client: OtoClient) {
 		self.client = client
 	}
-<%= for (method) in service.Methods { %>
-	<%= format_comment_text(method.Comment) %>	func <%= camelize_down(method.Name) %>(withRequest <%= camelize_down(method.InputObject.TypeName) %>: <%= method.InputObject.TypeName %>, completion: @escaping (_ response: <%= method.OutputObject.TypeName %>?, _ error: Error?) -> ()) {
-		let url = "\(self.client.endpoint)/<%= service.Name %>.<%= method.Name %>"
+{{ range $method := $service.Methods }}
+	{{ format_comment_text $method.Comment }}	func {{ camelize_down $method.Name }}(withRequest {{ camelize_down $method.InputObject.TypeName }}: {{ $method.InputObject.TypeName }}, completion: @escaping (_ response: {{ $method.OutputObject.TypeName }}?, _ error: Error?) -> ()) {
+		let url = "\(self.client.endpoint)/{{ $service.Name }}.{{ $method.Name }}"
 		var request = URLRequest(url: URL(string: url)!)
 		request.httpMethod = "POST"
 		request.addValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
 		request.addValue("application/json; charset=utf-8", forHTTPHeaderField: "Accept")
 		var jsonData: Data
 		do {
-			jsonData = try JSONEncoder().encode(<%= camelize_down(method.InputObject.TypeName) %>)
+			jsonData = try JSONEncoder().encode({{ camelize_down $method.InputObject.TypeName }})
 		} catch let err {
 			completion(nil, err)
 			return
@@ -43,35 +43,35 @@ class OtoClient {
                     return
                 }
             }
-			var <%= camelize_down(method.OutputObject.TypeName) %>: <%= method.OutputObject.TypeName %>
+			var {{ camelize_down $method.OutputObject.TypeName }}: {{ $method.OutputObject.TypeName }}
 			do {
-				<%= camelize_down(method.OutputObject.TypeName) %> = try JSONDecoder().decode(<%= method.OutputObject.TypeName %>.self, from: data!)
+				{{ camelize_down $method.OutputObject.TypeName }} = try JSONDecoder().decode({{ $method.OutputObject.TypeName }}.self, from: data!)
 			} catch let err {
 				completion(nil, err)
 				return
 			}
-            if let serviceErr = <%= camelize_down(method.OutputObject.TypeName) %>.error {
+            if let serviceErr = {{ camelize_down $method.OutputObject.TypeName }}.error {
                 if (serviceErr != "") {
                     let err = OtoError(serviceErr)
                         completion(nil, err)
                         return
                 }
             }
-			completion(<%= camelize_down(method.OutputObject.TypeName) %>, nil)
+			completion({{ camelize_down $method.OutputObject.TypeName }}, nil)
 		}
 		task.resume()
 	}
-<% } %>
+{{ end }}
 }
-<% } %>
+{{ end }}
 
-<%= for (object) in def.Objects { %>
-<%= format_comment_text(object.Comment) %>struct <%= object.Name %>: Encodable, Decodable {
-<%= for (field) in object.Fields { %>
-	<%= format_comment_text(field.Comment) %>	var <%= camelize_down(field.Name) %>: <%= field.Type.SwiftType %>?
-<% } %>
+{{ range $object := .Objects }}
+{{ format_comment_text $object.Comment }}struct {{ $object.Name }}: Encodable, Decodable {
+{{ range $field := $object.Fields }}
+	{{ format_comment_text $field.Comment }}	var {{ camelize_down $field.Name }}: {{ $field.Type.SwiftType }}?
+{{ end }}
 }
-<% } %>
+{{ end }}
 
 struct OtoError: LocalizedError
 {

@@ -10,7 +10,6 @@ import (
 
 	"github.com/damejeras/gorpc/parser"
 	"github.com/damejeras/gorpc/render"
-	"github.com/dustin/go-humanize"
 	"github.com/pkg/errors"
 )
 
@@ -73,10 +72,7 @@ flags:`)
 	if err != nil {
 		return err
 	}
-	out, err := render.Render(string(b), def, params)
-	if err != nil {
-		return err
-	}
+
 	var w io.Writer = stdout
 	if *outfile != "" {
 		f, err := os.Create(*outfile)
@@ -86,20 +82,12 @@ flags:`)
 		defer f.Close()
 		w = f
 	}
-	if _, err := io.WriteString(w, out); err != nil {
+
+	err = render.RenderStd(string(b), w, def, params)
+	if err != nil {
 		return err
 	}
-	if p.Verbose {
-		var methodsCount int
-		for i := range def.Services {
-			methodsCount += len(def.Services[i].Methods)
-		}
-		fmt.Println()
-		fmt.Printf("\tTotal services: %d", len(def.Services))
-		fmt.Printf("\tTotal Methods: %d", methodsCount)
-		fmt.Printf("\tTotal Objects: %d\n", len(def.Objects))
-		fmt.Printf("\tOutput size: %s\n", humanize.Bytes(uint64(len(out))))
-	}
+
 	return nil
 }
 
