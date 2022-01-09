@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -68,12 +67,13 @@ flags:`)
 	if *pkg != "" {
 		def.PackageName = *pkg
 	}
-	b, err := ioutil.ReadFile(*template)
+
+	tpl, err := render.LoadTemplateFile(*template)
 	if err != nil {
 		return err
 	}
 
-	var w io.Writer = stdout
+	w := stdout
 	if *outfile != "" {
 		f, err := os.Create(*outfile)
 		if err != nil {
@@ -83,8 +83,13 @@ flags:`)
 		w = f
 	}
 
-	err = render.Render(string(b), w, def, params)
-	if err != nil {
+	if err := tpl.Execute(w, struct {
+		parser.Definition
+		Params map[string]interface{}
+	}{
+		Definition: def,
+		Params:     params,
+	}); err != nil {
 		return err
 	}
 
