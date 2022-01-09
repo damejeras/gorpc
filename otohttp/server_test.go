@@ -5,57 +5,74 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/matryer/is"
 )
 
 func TestServer(t *testing.T) {
-	is := is.New(t)
 	srv := NewServer()
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"greeting":"Hi Mat"}`))
+	srv.Register("Service", "Method", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"status":"ok"}`))
 	})
-	srv.Register("Service", "Method", h)
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/gorpc/Service.Method", strings.NewReader(`{"name":"Mat"}`))
+	r := httptest.NewRequest(http.MethodPost, "/Service.Method", nil)
 	srv.ServeHTTP(w, r)
-	is.Equal(w.Code, http.StatusOK)
-	is.Equal(w.Body.String(), `{"greeting":"Hi Mat"}`)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected %d status code, got %d", http.StatusOK, w.Code)
+	}
+
+	expected := `{"status":"ok"}`
+	if w.Body.String() != expected {
+		t.Errorf("expected %q response body, got %q", expected, w.Body.String())
+	}
 }
 
-func TestServerBasepath(t *testing.T) {
-	is := is.New(t)
-	srv := NewServer()
-	srv.Basepath = "/api/"
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"greeting":"Hi Mat"}`))
+func TestWithPathPrefix(t *testing.T) {
+	srv := NewServer(WithPathPrefix("/gorpc/"))
+	srv.Register("Service", "Method", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"status":"ok"}`))
 	})
-	srv.Register("Service", "Method", h)
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/api/Service.Method", strings.NewReader(`{"name":"Mat"}`))
+	r := httptest.NewRequest(http.MethodPost, "/gorpc/Service.Method", nil)
 	srv.ServeHTTP(w, r)
-	is.Equal(w.Code, http.StatusOK)
-	is.Equal(w.Body.String(), `{"greeting":"Hi Mat"}`)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected %d status code, got %d", http.StatusOK, w.Code)
+	}
+
+	expected := `{"status":"ok"}`
+	if w.Body.String() != expected {
+		t.Errorf("expected %q response body, got %q", expected, w.Body.String())
+	}
 }
 
 func TestEncode(t *testing.T) {
-	is := is.New(t)
 	data := struct {
 		Greeting string `json:"greeting"`
 	}{
 		Greeting: "Hi there",
 	}
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/gorpc/Service.Method", strings.NewReader(`{"name":"Mat"}`))
+	r := httptest.NewRequest(http.MethodPost, "/gorpc/Service.Method", nil)
 	err := Encode(w, r, http.StatusOK, data)
-	is.NoErr(err)
-	is.Equal(w.Code, http.StatusOK)
-	is.Equal(w.Body.String(), `{"greeting":"Hi there"}`)
-	is.Equal(w.HeaderMap.Get("Content-Type"), "application/json; charset=utf-8")
+	if err != nil {
+		t.Error(err)
+	}
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected %d status code, got %d", http.StatusOK, w.Code)
+	}
+
+	expected := `{"greeting":"Hi there"}`
+	if w.Body.String() != expected {
+		t.Errorf("expected %q response body, got %q", expected, w.Body.String())
+	}
+
+	expected = "application/json; charset=utf-8"
+	if w.Header().Get("Content-Type") != "application/json; charset=utf-8" {
+		t.Errorf("expected content type to be %q, got %q", expected, w.Header().Get("Content-Type"))
+	}
 }
 
 func TestDecode(t *testing.T) {
-	is := is.New(t)
+	//is := is.New(t)
 	type r struct {
 		Name string
 	}
@@ -65,13 +82,31 @@ func TestDecode(t *testing.T) {
 		{"name": "Aaron"}
 	]`
 	req, err := http.NewRequest(http.MethodPost, "/service/method", strings.NewReader(j))
-	is.NoErr(err)
+	//is.NoErr(err)
+	if err != nil {
+		t.Error(err)
+	}
+
 	req.Header.Set("Content-Type", "application/json")
 	var requestObjects []r
 	err = Decode(req, &requestObjects)
-	is.NoErr(err)
-	is.Equal(len(requestObjects), 3)
-	is.Equal(requestObjects[0].Name, "Mat")
-	is.Equal(requestObjects[1].Name, "David")
-	is.Equal(requestObjects[2].Name, "Aaron")
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(requestObjects) != 3 {
+		t.Errorf("expected %d request objects, got %d", 3, len(requestObjects))
+	}
+
+	if requestObjects[0].Name != "Mat" {
+		t.Errorf("first request object's name had to be Mat")
+	}
+
+	if requestObjects[1].Name != "David" {
+		t.Errorf("second request object's name had to be David")
+	}
+
+	if requestObjects[2].Name != "Aaron" {
+		t.Errorf("first request object's name had to be Aaron")
+	}
 }

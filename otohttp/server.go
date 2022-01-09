@@ -3,73 +3,69 @@ package otohttp
 import (
 	"compress/gzip"
 	"encoding/json"
-	"fmt"
+	"github.com/pkg/errors"
 	"io"
-	"log"
 	"net/http"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
-// Server handles gorpc requests.
-type Server struct {
-	// Basepath is the path prefix to match.
-	// Default: /gorpc/
-	Basepath string
+type Server interface {
+	http.Handler
 
-	routes map[string]http.Handler
-	// NotFound is the http.Handler to use when a resource is
-	// not found.
-	NotFound http.Handler
-	// OnErr is called when there is an error.
-	OnErr func(w http.ResponseWriter, r *http.Request, err error)
+	Register(service, method string, h http.HandlerFunc)
 }
 
-// NewServer makes a new Server.
-func NewServer() *Server {
-	return &Server{
-		Basepath: "/gorpc/",
-		routes:   make(map[string]http.Handler),
-		OnErr: func(w http.ResponseWriter, r *http.Request, err error) {
-			errObj := struct {
-				Error string `json:"error"`
-			}{
-				Error: err.Error(),
-			}
-			if err := Encode(w, r, http.StatusInternalServerError, errObj); err != nil {
-				log.Printf("failed to encode error: %s\n", err)
-			}
+type server struct {
+	routes          map[string]http.Handler
+	notFoundHandler http.Handler
+	errHandler      ErrorHandler
+	pathFn          func(service, method string) string
+}
+
+func NewServer(options ...Option) Server {
+	srv := &server{
+		routes:          make(map[string]http.Handler),
+		notFoundHandler: http.NotFoundHandler(),
+		errHandler:      DefaultErrorHandler,
+		pathFn: func(service, method string) string {
+			return "/" + service + "." + method
 		},
-		NotFound: http.NotFoundHandler(),
 	}
+
+	for i := range options {
+		options[i](srv)
+	}
+
+	return srv
 }
 
-// Register adds a handler for the specified service method.
-func (s *Server) Register(service, method string, h http.HandlerFunc) {
-	s.routes[fmt.Sprintf("%s%s.%s", s.Basepath, service, method)] = h
-}
-
-// ServeHTTP serves the request.
-func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		s.NotFound.ServeHTTP(w, r)
+		s.notFoundHandler.ServeHTTP(w, r)
+
 		return
 	}
-	h, ok := s.routes[r.URL.Path]
+
+	handler, ok := s.routes[r.URL.Path]
 	if !ok {
-		s.NotFound.ServeHTTP(w, r)
+		s.notFoundHandler.ServeHTTP(w, r)
+
 		return
 	}
-	h.ServeHTTP(w, r)
+
+	handler.ServeHTTP(w, r)
 }
 
-// Encode writes the response.
-func Encode(w http.ResponseWriter, r *http.Request, status int, v interface{}) error {
-	b, err := json.Marshal(v)
+func (s *server) Register(service, method string, handler http.HandlerFunc) {
+	s.routes[s.pathFn(service, method)] = handler
+}
+
+func Encode(w http.ResponseWriter, r *http.Request, status int, payload interface{}) error {
+	bodyBytes, err := json.Marshal(payload)
 	if err != nil {
-		return errors.Wrap(err, "encode json")
+		return errors.Wrap(err, "marshal payload")
 	}
+
 	var out io.Writer = w
 	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 		w.Header().Set("Content-Encoding", "gzip")
@@ -77,23 +73,21 @@ func Encode(w http.ResponseWriter, r *http.Request, status int, v interface{}) e
 		out = gzw
 		defer gzw.Close()
 	}
+
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
-	if _, err := out.Write(b); err != nil {
+
+	if _, err := out.Write(bodyBytes); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-// Decode unmarshals the object in the request into v.
 func Decode(r *http.Request, v interface{}) error {
-	bodyBytes, err := io.ReadAll(io.LimitReader(r.Body, 1024*1024))
-	if err != nil {
-		return fmt.Errorf("Decode: read body: %w", err)
+	if err := json.NewDecoder(io.LimitReader(r.Body, 1024*1024)).Decode(v); err != nil {
+		return errors.Wrap(err, "decode request body")
 	}
-	err = json.Unmarshal(bodyBytes, v)
-	if err != nil {
-		return fmt.Errorf("Decode: json.Unmarshal: %w", err)
-	}
-	return nil
+
+	return r.Body.Close()
 }
