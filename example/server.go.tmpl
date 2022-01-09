@@ -26,7 +26,7 @@ type {{ camelize_down $service.Name }}Server struct {
     {{ camelize_down $service.Name }} {{ $service.Name }}
 }
 
-// Register adds the {{ $service.Name }} to the transport.Server.
+// Register{{ $service.Name }} adds the {{ $service.Name }} to the transport.Server.
 func Register{{ $service.Name }}(server transport.Server, {{ camelize_down $service.Name }} {{ $service.Name }}) {
     handler := &{{ camelize_down $service.Name }}Server {
         server: server,

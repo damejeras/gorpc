@@ -19,7 +19,7 @@ type greeterServiceServer struct {
 	greeterService GreeterService
 }
 
-// Register adds the GreeterService to the transport.Server.
+// RegisterGreeterService adds the GreeterService to the transport.Server.
 func RegisterGreeterService(server transport.Server, greeterService GreeterService) {
 	handler := &greeterServiceServer{
 		server:         server,
