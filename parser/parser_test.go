@@ -255,3 +255,22 @@ func TestParseNestedStructs(t *testing.T) {
 	is.True(err != nil)
 	is.True(strings.Contains(err.Error(), "nested structs not supported"))
 }
+
+func TestParseParameters(t *testing.T) {
+	params, err := ParseParams("key1:value1,key2: value2 , key3:value3")
+	if err != nil {
+		t.Error(err)
+	}
+
+	if params["key1"] != "value1" {
+		t.Errorf("param %q expected to be %q", "key1", "value1")
+	}
+
+	if params["key2"] != "value2" {
+		t.Errorf("param %q expected to be %q", "key2", "value2")
+	}
+
+	if params["key3"] != "value3" {
+		t.Errorf("param %q expected to be %q", "key3", "value3")
+	}
+}

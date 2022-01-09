@@ -1,44 +1,39 @@
 package main
 
 import (
-	"bytes"
+	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
-
-	"github.com/matryer/is"
 )
 
 func Test(t *testing.T) {
-	is := is.New(t)
-	var buf bytes.Buffer
-	args := []string{
+	os.Args = []string{
 		"gorpc",
-		"-template=./testdata/test.tmpl",
-		"-pkg=stuff",
+		"--template", "./testdata/test.tmpl",
+		"--package", "stuff",
+		"--output", "output.test",
 		"./testdata/services/pleasantries",
 	}
-	err := run(&buf, args)
-	is.NoErr(err)
-	s := buf.String()
+
+	main()
+
+	outputBytes, err := ioutil.ReadFile("output.test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() { _ = os.Remove("output.test") }()
+
+	output := string(outputBytes)
+
 	for _, should := range []string{
 		"GreeterService.GetGreetings",
 		"GreeterService.Greet",
 		"Welcomer.Welcome",
 	} {
-		if !strings.Contains(s, should) {
-			t.Errorf("missing: %s", should)
-			is.Fail()
+		if !strings.Contains(output, should) {
+			t.Fatalf("missing: %s", should)
 		}
 	}
-}
-
-func TestParseParams(t *testing.T) {
-	is := is.New(t)
-
-	params, err := parseParams("key1:value1,key2: value2 , key3:value3")
-	is.NoErr(err)
-	is.Equal(params["key1"], "value1")
-	is.Equal(params["key2"], "value2")
-	is.Equal(params["key3"], "value3")
-
 }

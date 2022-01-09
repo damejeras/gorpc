@@ -655,3 +655,22 @@ func (p *Parser) extractCommentMetadata(comment string) (map[string]interface{},
 	}
 	return metadata, strings.Join(lines, "\n"), nil
 }
+
+// ParseParams returns a map of data parsed from the params string.
+func ParseParams(s string) (map[string]interface{}, error) {
+	params := make(map[string]interface{})
+	if s == "" {
+		// empty map for an empty string
+		return params, nil
+	}
+	pairs := strings.Split(s, ",")
+	for i := range pairs {
+		pair := strings.TrimSpace(pairs[i])
+		segs := strings.Split(pair, ":")
+		if len(segs) != 2 {
+			return nil, errors.New("malformed params")
+		}
+		params[strings.TrimSpace(segs[0])] = strings.TrimSpace(segs[1])
+	}
+	return params, nil
+}
