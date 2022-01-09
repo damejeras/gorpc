@@ -1,7 +1,7 @@
 # goRPC
 
 Remote Procedure Calls for Go and beyond.
-Write service definitions in Go and generate clients and server code with good ol' text/template.
+Write service definitions in Go and generate client and server code for any language with good ol' text/template.
 
 Install the project:
 
