@@ -3,11 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/damejeras/gorpc/transport"
 	"io"
 	"log"
 	"net/http"
-
-	"github.com/damejeras/gorpc/otohttp"
 )
 
 //go:generate ./generate.sh
@@ -24,9 +23,9 @@ func (greeterService) Greet(ctx context.Context, r GreetRequest) (*GreetResponse
 
 func main() {
 	var greeterService greeterService
-	server := otohttp.NewServer()
+	server := transport.NewServer(transport.WithPathPrefix("/gorpc/"))
 	RegisterGreeterService(server, greeterService)
-	http.Handle("/oto/", server)
+	http.Handle("/gorpc/", server)
 	http.Handle("/", http.FileServer(http.Dir(".")))
 	fmt.Println("listening at http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))

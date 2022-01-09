@@ -1,4 +1,4 @@
-package parser
+package definition
 
 import (
 	"testing"
@@ -48,7 +48,7 @@ func TestObjectExample(t *testing.T) {
 			},
 		},
 	}
-	def := &Definition{
+	def := &Root{
 		Objects: []Object{obj1, obj2},
 	}
 	example, err := def.Example(obj1)

@@ -1,4 +1,4 @@
-package parser
+package definition
 
 import "fmt"
 
@@ -6,7 +6,7 @@ import "fmt"
 // of this object.
 // Examples are read from the docs.
 // This is experimental.
-func (d *Definition) Example(o Object) (map[string]interface{}, error) {
+func (d *Root) Example(o Object) (map[string]interface{}, error) {
 	obj := make(map[string]interface{})
 	for _, field := range o.Fields {
 		if field.Type.IsObject {
@@ -35,6 +35,6 @@ func (d *Definition) Example(o Object) (map[string]interface{}, error) {
 }
 
 // ExampleP is a pointer version of Example.
-func (d *Definition) ExampleP(o *Object) (map[string]interface{}, error) {
+func (d *Root) ExampleP(o *Object) (map[string]interface{}, error) {
 	return d.Example(*o)
 }

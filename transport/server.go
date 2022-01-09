@@ -12,6 +12,7 @@ import (
 type Server interface {
 	http.Handler
 
+	OnErr(w http.ResponseWriter, r *http.Request, err error)
 	Register(service, method string, h http.HandlerFunc)
 }
 
@@ -54,6 +55,10 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	handler.ServeHTTP(w, r)
+}
+
+func (s *server) OnErr(w http.ResponseWriter, r *http.Request, err error) {
+	s.errHandler(w, r, err)
 }
 
 func (s *server) Register(service, method string, handler http.HandlerFunc) {

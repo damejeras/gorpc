@@ -5,7 +5,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/damejeras/gorpc/otohttp"
+	"github.com/damejeras/gorpc/transport"
 )
 
 // GreeterService is a polite API for greeting people.
@@ -15,12 +15,12 @@ type GreeterService interface {
 }
 
 type greeterServiceServer struct {
-	server         *otohttp.Server
+	server         transport.Server
 	greeterService GreeterService
 }
 
-// Register adds the GreeterService to the otohttp.Server.
-func RegisterGreeterService(server *otohttp.Server, greeterService GreeterService) {
+// Register adds the GreeterService to the transport.Server.
+func RegisterGreeterService(server transport.Server, greeterService GreeterService) {
 	handler := &greeterServiceServer{
 		server:         server,
 		greeterService: greeterService,
@@ -31,7 +31,7 @@ func RegisterGreeterService(server *otohttp.Server, greeterService GreeterServic
 
 func (s *greeterServiceServer) handleGreet(w http.ResponseWriter, r *http.Request) {
 	var request GreetRequest
-	if err := otohttp.Decode(r, &request); err != nil {
+	if err := transport.Decode(r, &request); err != nil {
 		s.server.OnErr(w, r, err)
 		return
 	}
@@ -40,7 +40,7 @@ func (s *greeterServiceServer) handleGreet(w http.ResponseWriter, r *http.Reques
 		s.server.OnErr(w, r, err)
 		return
 	}
-	if err := otohttp.Encode(w, r, http.StatusOK, response); err != nil {
+	if err := transport.Encode(w, r, http.StatusOK, response); err != nil {
 		s.server.OnErr(w, r, err)
 		return
 	}

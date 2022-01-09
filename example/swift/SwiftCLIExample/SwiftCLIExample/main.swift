@@ -7,7 +7,7 @@
 
 import Foundation
 
-let client = OtoClient(withEndpoint: "http://localhost:8080/oto")
+let client = OtoClient(withEndpoint: "http://localhost:8080/gorpc")
 let greeterService = GreeterService(withClient: client)
 
 greeterService.greet(withRequest: GreetRequest(

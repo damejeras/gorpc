@@ -6,7 +6,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/damejeras/gorpc/otohttp"
+	"github.com/damejeras/gorpc/transport"
 	<%= for (importPath, name) in def.Imports { %>
 	<%= name %> "<%= importPath %>"
 	<% } %>
@@ -21,12 +21,12 @@ import (
 
 <%= for (service) in def.Services { %>
 type <%= camelize_down(service.Name) %>Server struct {
-	server *otohttp.Server
+	server transport.Server
 	<%= camelize_down(service.Name) %> <%= service.Name %>
 }
 
-// Register adds the <%= service.Name %> to the otohttp.Server.
-func Register<%= service.Name %>(server *otohttp.Server, <%= camelize_down(service.Name) %> <%= service.Name %>) {
+// Register adds the <%= service.Name %> to the transport.Server.
+func Register<%= service.Name %>(server transport.Server, <%= camelize_down(service.Name) %> <%= service.Name %>) {
 	handler := &<%= camelize_down(service.Name) %>Server{
 		server: server,
 		<%= camelize_down(service.Name) %>: <%= camelize_down(service.Name) %>,
@@ -36,7 +36,7 @@ func Register<%= service.Name %>(server *otohttp.Server, <%= camelize_down(servi
 <%= for (method) in service.Methods { %>
 func (s *<%= camelize_down(service.Name) %>Server) handle<%= method.Name %>(w http.ResponseWriter, r *http.Request) {
 	var request <%= method.InputObject.TypeName %>
-	if err := otohttp.Decode(r, &request); err != nil {
+	if err := transport.Decode(r, &request); err != nil {
 		s.server.OnErr(w, r, err)
 		return
 	}
@@ -45,7 +45,7 @@ func (s *<%= camelize_down(service.Name) %>Server) handle<%= method.Name %>(w ht
 		s.server.OnErr(w, r, err)
 		return
 	}
-	if err := otohttp.Encode(w, r, http.StatusOK, response); err != nil {
+	if err := transport.Encode(w, r, http.StatusOK, response); err != nil {
 		s.server.OnErr(w, r, err)
 		return
 	}

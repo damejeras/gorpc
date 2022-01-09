@@ -1,4 +1,4 @@
-package parser
+package definition
 
 import (
 	"bufio"
@@ -22,8 +22,8 @@ import (
 // ErrNotFound is returned when an Object is not found.
 var ErrNotFound = errors.New("not found")
 
-// Definition describes an Oto definition.
-type Definition struct {
+// Root contains all service definitions and will be passed to template.
+type Root struct {
 	// PackageName is the name of the package.
 	PackageName string `json:"packageName"`
 	// Services are the services described in this definition.
@@ -39,7 +39,7 @@ type Definition struct {
 
 // Object looks up an object by name. Returns ErrNotFound error
 // if it cannot find it.
-func (d *Definition) Object(name string) (*Object, error) {
+func (d *Root) Object(name string) (*Object, error) {
 	for i := range d.Objects {
 		obj := &d.Objects[i]
 		if obj.Name == name {
@@ -53,7 +53,7 @@ func (d *Definition) Object(name string) (*Object, error) {
 // input (request) type or not.\
 // Returns true if any method.InputObject.ObjectName matches
 // name.
-func (d *Definition) ObjectIsInput(name string) bool {
+func (d *Root) ObjectIsInput(name string) bool {
 	for _, service := range d.Services {
 		for _, method := range service.Methods {
 			if method.InputObject.ObjectName == name {
@@ -68,7 +68,7 @@ func (d *Definition) ObjectIsInput(name string) bool {
 // output (response) type or not.
 // Returns true if any method.OutputObject.ObjectName matches
 // name.
-func (d *Definition) ObjectIsOutput(name string) bool {
+func (d *Root) ObjectIsOutput(name string) bool {
 	for _, service := range d.Services {
 		for _, method := range service.Methods {
 			if method.OutputObject.ObjectName == name {
@@ -167,7 +167,7 @@ type Parser struct {
 	ExcludeInterfaces []string
 
 	patterns []string
-	def      Definition
+	def      Root
 
 	// outputObjects marks output object names.
 	outputObjects map[string]struct{}
@@ -187,10 +187,10 @@ func New(patterns ...string) *Parser {
 	}
 }
 
-func (p *Parser) ParseWithParams(params map[string]interface{}) (Definition, error) {
+func (p *Parser) ParseWithParams(params map[string]interface{}) (Root, error) {
 	def, err := p.parse()
 	if err != nil {
-		return Definition{}, err
+		return Root{}, err
 	}
 
 	def.Params = params
@@ -198,7 +198,7 @@ func (p *Parser) ParseWithParams(params map[string]interface{}) (Definition, err
 	return def, nil
 }
 
-func (p *Parser) parse() (Definition, error) {
+func (p *Parser) parse() (Root, error) {
 	cfg := &packages.Config{
 		Mode:  packages.NeedTypes | packages.NeedName | packages.NeedTypesInfo | packages.NeedDeps | packages.NeedName | packages.NeedSyntax,
 		Tests: false,
@@ -323,7 +323,7 @@ func (p *Parser) parseMethod(pkg *packages.Package, serviceName string, methodTy
 	return m, nil
 }
 
-// parseObject parses a struct type and adds it to the Definition.
+// parseObject parses a struct type and adds it to the Root.
 func (p *Parser) parseObject(pkg *packages.Package, o types.Object, v *types.Struct) error {
 	var obj Object
 	obj.Name = o.Name()

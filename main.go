@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/damejeras/gorpc/definition"
 	"github.com/damejeras/gorpc/format"
-	"github.com/damejeras/gorpc/parser"
 	"github.com/jessevdk/go-flags"
 	"os"
 	"strings"
@@ -26,13 +26,13 @@ func main() {
 		return
 	}
 
-	serviceDefinitionParser := parser.New(options.Arguments.Input...)
+	serviceDefinitionParser := definition.New(options.Arguments.Input...)
 	exclusions := strings.Split(options.Ignore, ",")
 	if exclusions[0] != "" {
 		serviceDefinitionParser.ExcludeInterfaces = exclusions
 	}
 
-	parameters, err := parser.ParseParams(options.Parameters)
+	parameters, err := definition.ParseParams(options.Parameters)
 	if err != nil {
 		logError(err)
 		os.Exit(1)
