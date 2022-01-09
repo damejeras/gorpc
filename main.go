@@ -60,7 +60,7 @@ flags:`)
 	if p.Verbose {
 		fmt.Println("gorpc - github.com/damejeras/gorpc", Version)
 	}
-	def, err := p.Parse()
+	def, err := p.ParseWithParams(params)
 	if err != nil {
 		return err
 	}
@@ -83,13 +83,7 @@ flags:`)
 		w = f
 	}
 
-	if err := tpl.Execute(w, struct {
-		parser.Definition
-		Params map[string]interface{}
-	}{
-		Definition: def,
-		Params:     params,
-	}); err != nil {
+	if err := tpl.Execute(w, def); err != nil {
 		return err
 	}
 

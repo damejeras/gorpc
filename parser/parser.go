@@ -32,6 +32,8 @@ type Definition struct {
 	// Imports is a map of Go imports that should be imported into
 	// Go code.
 	Imports map[string]string `json:"imports"`
+	// Params contains additional data parsed from command line arguments
+	Params map[string]interface{} `json:"params"`
 }
 
 // Object looks up an object by name. Returns ErrNotFound error
@@ -184,8 +186,18 @@ func New(patterns ...string) *Parser {
 	}
 }
 
-// Parse parses the files specified, returning the definition.
-func (p *Parser) Parse() (Definition, error) {
+func (p *Parser) ParseWithParams(params map[string]interface{}) (Definition, error) {
+	def, err := p.parse()
+	if err != nil {
+		return Definition{}, err
+	}
+
+	def.Params = params
+
+	return def, nil
+}
+
+func (p *Parser) parse() (Definition, error) {
 	cfg := &packages.Config{
 		Mode:  packages.NeedTypes | packages.NeedName | packages.NeedTypesInfo | packages.NeedDeps | packages.NeedName | packages.NeedSyntax,
 		Tests: false,

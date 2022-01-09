@@ -15,7 +15,7 @@ func TestParse(t *testing.T) {
 	parser := New(patterns...)
 	parser.Verbose = testing.Verbose()
 	parser.ExcludeInterfaces = []string{"Ignorer"}
-	def, err := parser.Parse()
+	def, err := parser.parse()
 	is.NoErr(err)
 
 	is.Equal(def.PackageName, "pleasantries")
@@ -237,7 +237,7 @@ func TestObjectIsInputOutput(t *testing.T) {
 	parser := New(patterns...)
 	parser.Verbose = testing.Verbose()
 	parser.ExcludeInterfaces = []string{"Ignorer"}
-	def, err := parser.Parse()
+	def, err := parser.parse()
 	is.NoErr(err)
 
 	is.Equal(def.ObjectIsInput("GreetRequest"), true)
@@ -251,7 +251,7 @@ func TestParseNestedStructs(t *testing.T) {
 	patterns := []string{"./testdata/nested-structs"}
 	p := New(patterns...)
 	p.Verbose = testing.Verbose()
-	_, err := p.Parse()
+	_, err := p.parse()
 	is.True(err != nil)
 	is.True(strings.Contains(err.Error(), "nested structs not supported"))
 }
