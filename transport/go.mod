@@ -1,4 +1,4 @@
-module github.com/damejeras/gorpc/otohttp
+module github.com/damejeras/gorpc/transport
 
 go 1.13
 

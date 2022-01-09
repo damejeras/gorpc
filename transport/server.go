@@ -1,4 +1,4 @@
-package otohttp
+package transport
 
 import (
 	"compress/gzip"
