@@ -1,4 +1,4 @@
-package parser
+package format
 
 /*
 	from https://github.com/fatih/camelcase
@@ -6,10 +6,12 @@ package parser
 	Copyright (c) 2015 Fatih Arslan
 */
 
-import "fmt"
+import (
+	"fmt"
+	"testing"
+)
 
 func ExampleSplit() {
-
 	for _, c := range []string{
 		"",
 		"lowercase",
@@ -29,7 +31,7 @@ func ExampleSplit() {
 		"Two  spaces",
 		"BadUTF8\xe2\xe2\xa1",
 	} {
-		fmt.Printf("%#v => %#v\n", c, Split(c))
+		fmt.Printf("%#v => %#v\n", c, split(c))
 	}
 
 	// Output:
@@ -50,4 +52,18 @@ func ExampleSplit() {
 	// "BöseÜberraschung" => []string{"Böse", "Überraschung"}
 	// "Two  spaces" => []string{"Two", "  ", "spaces"}
 	// "BadUTF8\xe2\xe2\xa1" => []string{"BadUTF8\xe2\xe2\xa1"}
+}
+
+func TestCamelizeDown(t *testing.T) {
+	for in, expected := range map[string]string{
+		"CamelsAreGreat": "camelsAreGreat",
+		"ID":             "id",
+		"HTML":           "html",
+		"PreviewHTML":    "previewHTML",
+	} {
+		actual := CamelizeDown(in)
+		if actual != expected {
+			t.Errorf("%s expected: %q but got %q", in, expected, actual)
+		}
+	}
 }

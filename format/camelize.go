@@ -1,4 +1,4 @@
-package parser
+package format
 
 /*
 	from https://github.com/fatih/camelcase
@@ -12,7 +12,49 @@ import (
 	"unicode/utf8"
 )
 
-// Split splits the camelcase word and returns a list of words. It also
+// CamelizeUp converts a name or other string into a camel case
+// version with the first letter uppercase. "modelID" becomes "ModelID".
+func CamelizeUp(word string) string {
+	if isAcronym(word) {
+		// entire word is an acronym
+		return strings.ToLower(word)
+	}
+	words := split(word)
+	for i := range words {
+		if isAcronym(words[i]) {
+			if i == 0 {
+				words[i] = strings.ToLower(words[i])
+			} else {
+				words[i] = strings.ToUpper(words[i])
+			}
+		}
+	}
+	word = strings.Join(words, "")
+	return strings.ToUpper(word[:1]) + word[1:]
+}
+
+// CamelizeDown converts a name or other string into a camel case
+// version with the first letter lowercase. "ModelID" becomes "modelID".
+func CamelizeDown(word string) string {
+	if isAcronym(word) {
+		// entire word is an acronym
+		return strings.ToLower(word)
+	}
+	words := split(word)
+	for i := range words {
+		if isAcronym(words[i]) {
+			if i == 0 {
+				words[i] = strings.ToLower(words[i])
+			} else {
+				words[i] = strings.ToUpper(words[i])
+			}
+		}
+	}
+	word = strings.Join(words, "")
+	return strings.ToLower(word[:1]) + word[1:]
+}
+
+// split splits the camelcase word and returns a list of words. It also
 // supports digits. Both lower camel case and upper camel case are supported.
 // For more info please check: http://en.wikipedia.org/wiki/CamelCase
 //
@@ -49,7 +91,7 @@ import (
 //       if subsequent string is lower case:
 //         move last character of upper case string to beginning of
 //         lower case string
-func Split(src string) (entries []string) {
+func split(src string) (entries []string) {
 	// don't split invalid utf8
 	if !utf8.ValidString(src) {
 		return []string{src}
@@ -93,35 +135,3 @@ func Split(src string) (entries []string) {
 	}
 	return
 }
-
-// camelizeDown converts a name or other string into a camel case
-// version with the first letter lowercase. "ModelID" becomes "modelID".
-func camelizeDown(word string) string {
-	if isAcronym(word) {
-		// entire word is an acronym
-		return strings.ToLower(word)
-	}
-	words := Split(word)
-	for i := range words {
-		if isAcronym(words[i]) {
-			if i == 0 {
-				words[i] = strings.ToLower(words[i])
-			} else {
-				words[i] = strings.ToUpper(words[i])
-			}
-		}
-	}
-	word = strings.Join(words, "")
-	return strings.ToLower(word[:1]) + word[1:]
-}
-
-func isAcronym(word string) bool {
-	for _, ac := range baseAcronyms {
-		if strings.EqualFold(ac, word) {
-			return true
-		}
-	}
-	return false
-}
-
-var baseAcronyms = strings.Split(`HTML,JSON,JWT,ID,UUID,SQL,ACK,ACL,ADSL,AES,ANSI,API,ARP,ATM,BGP,BSS,CAT,CCITT,CHAP,CIDR,CIR,CLI,CPE,CPU,CRC,CRT,CSMA,CMOS,DCE,DEC,DES,DHCP,DNS,DRAM,DSL,DSLAM,DTE,DMI,EHA,EIA,EIGRP,EOF,ESS,FCC,FCS,FDDI,FTP,GBIC,gbps,GEPOF,HDLC,HTTP,HTTPS,IANA,ICMP,IDF,IDS,IEEE,IETF,IMAP,IP,IPS,ISDN,ISP,kbps,LACP,LAN,LAPB,LAPF,LLC,MAC,MAN,Mbps,MC,MDF,MIB,MoCA,MPLS,MTU,NAC,NAT,NBMA,NIC,NRZ,NRZI,NVRAM,OSI,OSPF,OUI,PAP,PAT,PC,PIM,PIM,PCM,PDU,POP3,POP,POTS,PPP,PPTP,PTT,PVST,RADIUS,RAM,RARP,RFC,RIP,RLL,ROM,RSTP,RTP,RCP,SDLC,SFD,SFP,SLARP,SLIP,SMTP,SNA,SNAP,SNMP,SOF,SRAM,SSH,SSID,STP,SYN,TDM,TFTP,TIA,TOFU,UDP,URL,URI,USB,UTP,VC,VLAN,VLSM,VPN,W3C,WAN,WEP,WiFi,WPA,WWW`, ",")

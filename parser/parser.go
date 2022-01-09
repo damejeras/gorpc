@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/damejeras/gorpc/format"
 	"go/ast"
 	"go/doc"
 	"go/token"
@@ -294,7 +295,7 @@ func (p *Parser) parseService(pkg *packages.Package, obj types.Object, interface
 func (p *Parser) parseMethod(pkg *packages.Package, serviceName string, methodType *types.Func) (Method, error) {
 	var m Method
 	m.Name = methodType.Name()
-	m.NameLowerCamel = camelizeDown(m.Name)
+	m.NameLowerCamel = format.CamelizeDown(m.Name)
 	m.Comment = p.commentForMethod(serviceName, m.Name)
 	var err error
 	m.Metadata, m.Comment, err = p.extractCommentMetadata(m.Comment)
@@ -381,7 +382,7 @@ func (p *Parser) parseTags(tag string) (map[string]FieldTag, error) {
 func (p *Parser) parseField(pkg *packages.Package, objectName string, v *types.Var, tag string) (Field, error) {
 	var f Field
 	f.Name = v.Name()
-	f.NameLowerCamel = camelizeDown(f.Name)
+	f.NameLowerCamel = format.CamelizeDown(f.Name)
 	// if it has a json tag, use that as the NameJSON.
 	if tag != "" {
 		fieldTag := reflect.StructTag(tag)
@@ -453,7 +454,7 @@ func (p *Parser) parseFieldType(pkg *packages.Package, obj types.Object) (FieldT
 	}
 	ftype.TypeName = types.TypeString(originalTyp, resolver)
 	ftype.ObjectName = types.TypeString(originalTyp, func(other *types.Package) string { return "" })
-	ftype.ObjectNameLowerCamel = camelizeDown(ftype.ObjectName)
+	ftype.ObjectNameLowerCamel = format.CamelizeDown(ftype.ObjectName)
 	ftype.TypeID = pkgPath + "." + ftype.ObjectName
 	ftype.CleanObjectName = strings.TrimPrefix(ftype.TypeName, "*")
 	ftype.TSType = ftype.CleanObjectName

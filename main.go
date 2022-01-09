@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/damejeras/gorpc/format"
 	"github.com/damejeras/gorpc/parser"
-	"github.com/damejeras/gorpc/render"
 	"github.com/jessevdk/go-flags"
 	"os"
 	"strings"
@@ -48,7 +48,7 @@ func main() {
 		definition.PackageName = options.Package
 	}
 
-	template, err := render.LoadTemplateFile(options.Template)
+	template, err := format.LoadTemplateFile(options.Template)
 	if err != nil {
 		logError(err)
 		os.Exit(1)
