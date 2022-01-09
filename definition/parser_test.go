@@ -12,7 +12,7 @@ import (
 func TestParse(t *testing.T) {
 	is := is.New(t)
 	patterns := []string{"./testdata/services/pleasantries"}
-	parser := New(patterns...)
+	parser := NewParser(patterns...)
 	parser.Verbose = testing.Verbose()
 	parser.ExcludeInterfaces = []string{"Ignorer"}
 	def, err := parser.parse()
@@ -97,7 +97,7 @@ You will love it.`)
 	is.Equal(len(greetOutputObject.Fields), 2)
 	is.Equal(greetOutputObject.Fields[0].Name, "Greetings")
 	is.Equal(greetOutputObject.Fields[0].NameLowerCamel, "greetings")
-	is.Equal(greetOutputObject.Fields[0].Type.TypeID, "github.com/damejeras/gorpc/parser/testdata/services/pleasantries.Greeting")
+	is.Equal(greetOutputObject.Fields[0].Type.TypeID, "github.com/damejeras/gorpc/definition/testdata/services/pleasantries.Greeting")
 	is.Equal(greetOutputObject.Fields[0].OmitEmpty, false)
 	is.Equal(greetOutputObject.Fields[0].Type.TypeName, "Greeting")
 	is.Equal(greetOutputObject.Fields[0].Type.Multiple, true)
@@ -234,7 +234,7 @@ func TestExtractCommentMetadata(t *testing.T) {
 func TestObjectIsInputOutput(t *testing.T) {
 	is := is.New(t)
 	patterns := []string{"./testdata/services/pleasantries"}
-	parser := New(patterns...)
+	parser := NewParser(patterns...)
 	parser.Verbose = testing.Verbose()
 	parser.ExcludeInterfaces = []string{"Ignorer"}
 	def, err := parser.parse()
@@ -249,7 +249,7 @@ func TestObjectIsInputOutput(t *testing.T) {
 func TestParseNestedStructs(t *testing.T) {
 	is := is.New(t)
 	patterns := []string{"./testdata/nested-structs"}
-	p := New(patterns...)
+	p := NewParser(patterns...)
 	p.Verbose = testing.Verbose()
 	_, err := p.parse()
 	is.True(err != nil)

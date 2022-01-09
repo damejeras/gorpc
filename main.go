@@ -26,10 +26,10 @@ func main() {
 		return
 	}
 
-	serviceDefinitionParser := definition.New(options.Arguments.Input...)
+	definitionParser := definition.NewParser(options.Arguments.Input...)
 	exclusions := strings.Split(options.Ignore, ",")
 	if exclusions[0] != "" {
-		serviceDefinitionParser.ExcludeInterfaces = exclusions
+		definitionParser.ExcludeInterfaces = exclusions
 	}
 
 	parameters, err := definition.ParseParams(options.Parameters)
@@ -38,7 +38,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	definition, err := serviceDefinitionParser.ParseWithParams(parameters)
+	definition, err := definitionParser.ParseWithParams(parameters)
 	if err != nil {
 		logError(err)
 		os.Exit(1)

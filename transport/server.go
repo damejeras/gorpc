@@ -27,7 +27,7 @@ func NewServer(options ...Option) Server {
 	srv := &server{
 		routes:          make(map[string]http.Handler),
 		notFoundHandler: http.NotFoundHandler(),
-		errHandler:      DefaultErrorHandler,
+		errHandler:      defaultErrorHandler,
 		pathFn: func(service, method string) string {
 			return "/" + service + "." + method
 		},

@@ -178,10 +178,10 @@ type Parser struct {
 	docs *doc.Package
 }
 
-// New makes a fresh parser using the specified patterns.
+// NewParser makes a fresh parser using the specified patterns.
 // The patterns should be the args passed into the tool (after any flags)
 // and will be passed to the underlying build system.
-func New(patterns ...string) *Parser {
+func NewParser(patterns ...string) *Parser {
 	return &Parser{
 		patterns: patterns,
 	}
