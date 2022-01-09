@@ -8,11 +8,8 @@ import (
 	"strings"
 
 	"github.com/fatih/structtag"
-	"github.com/markbates/inflect"
 	"github.com/pkg/errors"
 )
-
-var defaultRuleset = inflect.NewDefaultRuleset()
 
 func toJSONHelper(v interface{}) (template.HTML, error) {
 	b, err := json.MarshalIndent(v, "", "\t")

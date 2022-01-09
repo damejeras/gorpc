@@ -83,7 +83,7 @@ flags:`)
 		w = f
 	}
 
-	err = render.RenderStd(string(b), w, def, params)
+	err = render.Render(string(b), w, def, params)
 	if err != nil {
 		return err
 	}
