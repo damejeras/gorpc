@@ -38,14 +38,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	definition, err := definitionParser.ParseWithParams(parameters)
+	rootDefinition, err := definitionParser.ParseWithParams(parameters)
 	if err != nil {
 		logError(err)
 		os.Exit(1)
 	}
 
 	if options.Package != "" {
-		definition.PackageName = options.Package
+		rootDefinition.PackageName = options.Package
 	}
 
 	template, err := format.LoadTemplateFile(options.Template)
@@ -66,7 +66,7 @@ func main() {
 		output = outputFile
 	}
 
-	if err := template.Execute(output, definition); err != nil {
+	if err := template.Execute(output, rootDefinition); err != nil {
 		logError(err)
 	}
 }
