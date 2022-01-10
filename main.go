@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/damejeras/gorpc/definition"
 	"github.com/damejeras/gorpc/format"
 	"github.com/jessevdk/go-flags"
-	"os"
-	"strings"
 )
 
 var options struct {

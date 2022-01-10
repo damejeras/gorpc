@@ -1,39 +1,54 @@
 package main
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
-func Test(t *testing.T) {
-	os.Args = []string{
-		"gorpc",
-		"--template", "./testdata/test.tmpl",
-		"--package", "stuff",
-		"--output", "output.test",
-		"./testdata/services/pleasantries",
-	}
-
-	main()
-
-	outputBytes, err := ioutil.ReadFile("output.test")
+func TestTemplatesAgainstGoldenFiles(t *testing.T) {
+	files, err := ioutil.ReadDir("./templates")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	defer func() { _ = os.Remove("output.test") }()
+	for i := range files {
+		filename := files[i].Name()
 
-	output := string(outputBytes)
-
-	for _, should := range []string{
-		"GreeterService.GetGreetings",
-		"GreeterService.Greet",
-		"Welcomer.Welcome",
-	} {
-		if !strings.Contains(output, should) {
-			t.Fatalf("missing: %s", should)
+		goldenFileContent, err := ioutil.ReadFile(
+			filepath.Join("./test", "golden-files", strings.Replace(filename, ".tmpl", ".golden", 1)),
+		)
+		if err != nil {
+			t.Fatal(err)
 		}
+
+		outputFile, err := ioutil.TempFile("", filename)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		os.Args = []string{
+			"gorpc",
+			"--template", filepath.Join("templates", filename),
+			"--package", "main",
+			"--output", outputFile.Name(),
+			"./test/services/pleasantries",
+		}
+
+		main()
+
+		outputContent, err := ioutil.ReadFile(outputFile.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !bytes.Equal(outputContent, goldenFileContent) {
+			t.Errorf("ouput for %q template doesn't match golden file", filename)
+		}
+
+		outputFile.Close()
 	}
 }

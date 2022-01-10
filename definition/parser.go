@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/damejeras/gorpc/format"
 	"go/ast"
 	"go/doc"
 	"go/token"
@@ -14,6 +13,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/damejeras/gorpc/format"
 	"github.com/fatih/structtag"
 	"github.com/pkg/errors"
 	"golang.org/x/tools/go/packages"

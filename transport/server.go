@@ -3,10 +3,11 @@ package transport
 import (
 	"compress/gzip"
 	"encoding/json"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 type Server interface {

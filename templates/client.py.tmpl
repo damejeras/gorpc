@@ -4,29 +4,27 @@ import requests
 import json
 
 class Client:
-	"""Client provides access to the Firesearch API."""
-
 	def __init__(self, endpoint="http://localhost:8888/api", apiKey=""):
 		self.endpoint = endpoint
 		self.apiKey = apiKey
 		if self.endpoint == "":
 			raise FieldError(field="endpoint", message="endpoint missing")
 
-<%= for (service) in def.Services { %>class <%= service.Name %>:
-	"""<%= format_comment_line(service.Comment) %>"""
+{{ range $service := .Services }}class {{ $service.Name }}:
+	"""{{ format_comment_line $service.Comment }}"""
 
 	def __init__(self, client):
 		self.client = client
-	<%= for (method) in service.Methods { %>
-	def <%= method.NameLowerCamel %>(self, <%= method.InputObject.ObjectNameLowerCamel %>):
-		"""<%= format_comment_line(method.Comment) %>"""
-		url = "{}/<%= service.Name %>.<%= method.Name %>".format(self.client.endpoint)
+	{{ range $method := $service.Methods }}
+	def {{ $method.NameLowerCamel }}(self, {{ $method.InputObject.ObjectNameLowerCamel }}):
+		"""{{ format_comment_line $method.Comment }}"""
+		url = "{}/{{ $service.Name }}.{{ $method.Name }}".format(self.client.endpoint)
 		headers = {
 			'Accept': 'application/json; charset=utf8',
 			'Content-Type': 'application/json; charset=utf8',
 			'X-API-Key': self.client.apiKey,
 		}
-		r = requests.post(url, json=<%= method.InputObject.ObjectNameLowerCamel %>, headers=headers)
+		r = requests.post(url, json={{ $method.InputObject.ObjectNameLowerCamel }}, headers=headers)
 		if r.status_code != 200:
 			raise OtoError(message="status code: {}".format(r.status_code))
 		j = r.json()
@@ -35,8 +33,8 @@ class Client:
 			if err != '':
 				raise OtoError(message=err)
 		return j
-	<% } %>
-<% } %>
+	{{ end }}
+{{ end }}
 
 class Error(Exception):
 	"""Base class for exceptions in this module."""

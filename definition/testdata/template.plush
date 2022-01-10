@@ -1,2 +1,0 @@
-<%= for (service) in def.Services { %><%= for (method) in service.Methods { %><%= service.Name %>.<%= method.Name %>
-<% } %><% } %>

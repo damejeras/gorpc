@@ -3,13 +3,13 @@
 'use strict';
 
 {{ range $service := .Services -}}
-class {{ $service.Name }} {
+{{ format_comment_text $service.Comment }}export class {{ $service.Name }} {
     {{ range $method := $service.Methods -}}
-    async {{ camelize_down $method.Name }}({{ camelize_down $method.InputObject.TypeName }}) {
+    {{ format_comment_text $method.Comment }}	async {{ camelize_down $method.Name }}({{ camelize_down $method.InputObject.TypeName }}) {
         const headers = {
-			'Accept':		'application/json',
-			'Accept-Encoding':	'gzip',
-			'Content-Type':		'application/json',
+			'Accept': 'application/json',
+			'Accept-Encoding': 'gzip',
+			'Content-Type':	'application/json',
         }
         {{ camelize_down $method.InputObject.TypeName }} = {{ camelize_down $method.InputObject.TypeName }} || {}
 		const response = await fetch('/gorpc/{{ $service.Name }}.{{ $method.Name }}', {

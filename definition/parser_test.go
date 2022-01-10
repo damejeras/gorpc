@@ -2,7 +2,9 @@ package definition
 
 import (
 	"bytes"
+	"encoding/json"
 	"go/doc"
+	"log"
 	"strings"
 	"testing"
 
@@ -17,7 +19,6 @@ func TestParse(t *testing.T) {
 	parser.ExcludeInterfaces = []string{"Ignorer"}
 	def, err := parser.parse()
 	is.NoErr(err)
-
 	is.Equal(def.PackageName, "pleasantries")
 	is.Equal(len(def.Services), 3) // should be 3 services
 	is.Equal(def.Services[0].Name, "GreeterService")
@@ -78,10 +79,10 @@ You will love it.`)
 	is.Equal(greetInputObject.Fields[0].Type.ObjectNameLowerCamel, "page")
 	is.Equal(greetInputObject.Fields[0].Type.JSType, "object")
 	is.Equal(greetInputObject.Fields[0].Type.TSType, "services.Page")
-	is.Equal(greetInputObject.Fields[0].Type.TypeID, "github.com/damejeras/gorpc/testdata/services.Page")
+	is.Equal(greetInputObject.Fields[0].Type.TypeID, "github.com/damejeras/gorpc/test/services.Page")
 	is.Equal(greetInputObject.Fields[0].Type.IsObject, true)
 	is.Equal(greetInputObject.Fields[0].Type.Multiple, false)
-	is.Equal(greetInputObject.Fields[0].Type.Package, "github.com/damejeras/gorpc/testdata/services")
+	is.Equal(greetInputObject.Fields[0].Type.Package, "github.com/damejeras/gorpc/test/services")
 	is.Equal(greetInputObject.Fields[0].Tag, `tagtest:"value,option1,option2"`)
 	is.True(greetInputObject.Fields[0].ParsedTags != nil)
 	is.Equal(greetInputObject.Fields[0].ParsedTags["tagtest"].Value, "value")
@@ -192,15 +193,15 @@ You will love it.`)
 			is.Equal(len(def.Objects[i].Fields), 1)
 			is.Equal(def.Objects[i].Imported, false)
 		case "Page":
-			is.Equal(def.Objects[i].TypeID, "github.com/damejeras/gorpc/testdata/services.Page")
+			is.Equal(def.Objects[i].TypeID, "github.com/damejeras/gorpc/test/services.Page")
 			is.Equal(len(def.Objects[i].Fields), 3)
 			is.Equal(def.Objects[i].Imported, true)
 		}
 	}
 
-	// b, err := json.MarshalIndent(def, "", "  ")
-	// is.NoErr(err)
-	// log.Println(string(b))
+	b, err := json.MarshalIndent(def, "", "  ")
+	is.NoErr(err)
+	log.Println(string(b))
 }
 
 func TestFieldTypeIsOptional(t *testing.T) {
