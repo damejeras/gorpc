@@ -22,152 +22,14 @@ import (
 // ErrNotFound is returned when an Object is not found.
 var ErrNotFound = errors.New("not found")
 
-// Root contains all service definitions and will be passed to template.
-type Root struct {
-	// PackageName is the name of the package.
-	PackageName string `json:"packageName"`
-	// Services are the services described in this definition.
-	Services []Service `json:"services"`
-	// Objects are the structures that are used throughout this definition.
-	Objects []Object `json:"objects"`
-	// Imports is a map of Go imports that should be imported into
-	// Go code.
-	Imports map[string]string `json:"imports"`
-	// Params contains additional data parsed from command line arguments
-	Params map[string]interface{} `json:"params"`
-}
-
-// Object looks up an object by name. Returns ErrNotFound error
-// if it cannot find it.
-func (d *Root) Object(name string) (*Object, error) {
-	for i := range d.Objects {
-		obj := &d.Objects[i]
-		if obj.Name == name {
-			return obj, nil
-		}
-	}
-	return nil, ErrNotFound
-}
-
-// ObjectIsInput gets whether this object is a method
-// input (request) type or not.\
-// Returns true if any method.InputObject.ObjectName matches
-// name.
-func (d *Root) ObjectIsInput(name string) bool {
-	for _, service := range d.Services {
-		for _, method := range service.Methods {
-			if method.InputObject.ObjectName == name {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// ObjectIsOutput gets whether this object is a method
-// output (response) type or not.
-// Returns true if any method.OutputObject.ObjectName matches
-// name.
-func (d *Root) ObjectIsOutput(name string) bool {
-	for _, service := range d.Services {
-		for _, method := range service.Methods {
-			if method.OutputObject.ObjectName == name {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// Service describes a service, akin to an interface in Go.
-type Service struct {
-	Name    string   `json:"name"`
-	Methods []Method `json:"methods"`
-	Comment string   `json:"comment"`
-	// Metadata are typed key/value pairs extracted from the
-	// comments.
-	Metadata map[string]interface{} `json:"metadata"`
-}
-
-// Method describes a method that a Service can perform.
-type Method struct {
-	Name           string    `json:"name"`
-	NameLowerCamel string    `json:"nameLowerCamel"`
-	InputObject    FieldType `json:"inputObject"`
-	OutputObject   FieldType `json:"outputObject"`
-	Comment        string    `json:"comment"`
-	// Metadata are typed key/value pairs extracted from the
-	// comments.
-	Metadata map[string]interface{} `json:"metadata"`
-}
-
-// Object describes a data structure that is part of this definition.
-type Object struct {
-	TypeID   string  `json:"typeID"`
-	Name     string  `json:"name"`
-	Imported bool    `json:"imported"`
-	Fields   []Field `json:"fields"`
-	Comment  string  `json:"comment"`
-	// Metadata are typed key/value pairs extracted from the
-	// comments.
-	Metadata map[string]interface{} `json:"metadata"`
-}
-
-// Field describes the field inside an Object.
-type Field struct {
-	Name           string              `json:"name"`
-	NameLowerCamel string              `json:"nameLowerCamel"`
-	Type           FieldType           `json:"type"`
-	OmitEmpty      bool                `json:"omitEmpty"`
-	Comment        string              `json:"comment"`
-	Tag            string              `json:"tag"`
-	ParsedTags     map[string]FieldTag `json:"parsedTags"`
-	Example        interface{}         `json:"example"`
-	// Metadata are typed key/value pairs extracted from the
-	// comments.
-	Metadata map[string]interface{} `json:"metadata"`
-}
-
-// FieldTag is a parsed tag.
-// For more information, see Struct Tags in Go.
-type FieldTag struct {
-	// Value is the value of the tag.
-	Value string `json:"value"`
-	// Options are the options for the tag.
-	Options []string `json:"options"`
-}
-
-// FieldType holds information about the type of data that this
-// Field stores.
-type FieldType struct {
-	TypeID     string `json:"typeID"`
-	TypeName   string `json:"typeName"`
-	ObjectName string `json:"objectName"`
-	// CleanObjectName is the ObjectName with * removed
-	// for pointer types.
-	CleanObjectName      string `json:"cleanObjectName"`
-	ObjectNameLowerCamel string `json:"objectNameLowerCamel"`
-	Multiple             bool   `json:"multiple"`
-	Package              string `json:"package"`
-	IsObject             bool   `json:"isObject"`
-	JSType               string `json:"jsType"`
-	TSType               string `json:"tsType"`
-	SwiftType            string `json:"swiftType"`
-}
-
-// IsOptional returns true for pointer types (optional).
-func (f FieldType) IsOptional() bool {
-	return strings.HasPrefix(f.ObjectName, "*")
-}
-
 // Parser parses Oto Go definition packages.
 type Parser struct {
 	Verbose bool
 
-	ExcludeInterfaces []string
+	Exclusions []string
 
-	patterns []string
-	def      Root
+	patterns   []string
+	definition Root
 
 	// outputObjects marks output object names.
 	outputObjects map[string]struct{}
@@ -183,14 +45,16 @@ type Parser struct {
 // and will be passed to the underlying build system.
 func NewParser(patterns ...string) *Parser {
 	return &Parser{
-		patterns: patterns,
+		patterns:      patterns,
+		outputObjects: make(map[string]struct{}),
+		objects:       make(map[string]struct{}),
 	}
 }
 
-func (p *Parser) ParseWithParams(params map[string]interface{}) (Root, error) {
+func (p *Parser) ParseWithParams(params map[string]interface{}) (*Root, error) {
 	def, err := p.parse()
 	if err != nil {
-		return Root{}, err
+		return nil, err
 	}
 
 	def.Params = params
@@ -198,137 +62,169 @@ func (p *Parser) ParseWithParams(params map[string]interface{}) (Root, error) {
 	return def, nil
 }
 
-func (p *Parser) parse() (Root, error) {
+func (p *Parser) parse() (*Root, error) {
 	cfg := &packages.Config{
 		Mode:  packages.NeedTypes | packages.NeedName | packages.NeedTypesInfo | packages.NeedDeps | packages.NeedName | packages.NeedSyntax,
 		Tests: false,
 	}
+
 	pkgs, err := packages.Load(cfg, p.patterns...)
 	if err != nil {
-		return p.def, err
+		return nil, err
 	}
-	p.outputObjects = make(map[string]struct{})
-	p.objects = make(map[string]struct{})
+
 	var excludedObjectsTypeIDs []string
 	for _, pkg := range pkgs {
 		p.docs, err = doc.NewFromFiles(pkg.Fset, pkg.Syntax, "")
 		if err != nil {
-			panic(err)
+			return nil, errors.Wrap(err, "parse docs for file")
 		}
-		p.def.PackageName = pkg.Name
+
+		p.definition.PackageName = pkg.Name
 		scope := pkg.Types.Scope()
+
 		for _, name := range scope.Names() {
 			obj := scope.Lookup(name)
 			switch item := obj.Type().Underlying().(type) {
 			case *types.Interface:
 				s, err := p.parseService(pkg, obj, item)
 				if err != nil {
-					return p.def, err
+					return nil, errors.Wrap(err, "parse service")
 				}
-				if isInSlice(p.ExcludeInterfaces, name) {
+
+				if isInSlice(p.Exclusions, name) {
 					for _, method := range s.Methods {
 						excludedObjectsTypeIDs = append(excludedObjectsTypeIDs, method.InputObject.TypeID)
 						excludedObjectsTypeIDs = append(excludedObjectsTypeIDs, method.OutputObject.TypeID)
 					}
+
 					continue
 				}
-				p.def.Services = append(p.def.Services, s)
+
+				p.definition.Services = append(p.definition.Services, s)
 			case *types.Struct:
-				p.parseObject(pkg, obj, item)
+				if err := p.parseObject(pkg, obj, item); err != nil {
+					return nil, errors.Wrap(err, "parse object")
+				}
 			}
 		}
 	}
+
 	// remove any excluded objects
-	nonExcludedObjects := make([]Object, 0, len(p.def.Objects))
-	for _, object := range p.def.Objects {
+	nonExcludedObjects := make([]Object, 0, len(p.definition.Objects))
+	for _, object := range p.definition.Objects {
 		excluded := false
 		for _, excludedTypeID := range excludedObjectsTypeIDs {
 			if object.TypeID == excludedTypeID {
 				excluded = true
+
 				break
 			}
 		}
+
 		if excluded {
 			continue
 		}
+
 		nonExcludedObjects = append(nonExcludedObjects, object)
 	}
-	p.def.Objects = nonExcludedObjects
+
+	p.definition.Objects = nonExcludedObjects
 	// sort services
-	sort.Slice(p.def.Services, func(i, j int) bool {
-		return p.def.Services[i].Name < p.def.Services[j].Name
+	sort.Slice(p.definition.Services, func(i, j int) bool {
+		return p.definition.Services[i].Name < p.definition.Services[j].Name
 	})
 	// sort objects
-	sort.Slice(p.def.Objects, func(i, j int) bool {
-		return p.def.Objects[i].Name < p.def.Objects[j].Name
+	sort.Slice(p.definition.Objects, func(i, j int) bool {
+		return p.definition.Objects[i].Name < p.definition.Objects[j].Name
 	})
+
 	if err := p.addOutputFields(); err != nil {
-		return p.def, err
+		return nil, err
 	}
-	return p.def, nil
+
+	return &p.definition, nil
 }
 
 func (p *Parser) parseService(pkg *packages.Package, obj types.Object, interfaceType *types.Interface) (Service, error) {
-	var s Service
+	var (
+		s   Service
+		err error
+	)
+
 	s.Name = obj.Name()
 	s.Comment = p.commentForType(s.Name)
-	var err error
 	s.Metadata, s.Comment, err = p.extractCommentMetadata(s.Comment)
 	if err != nil {
 		return s, p.wrapErr(errors.New("extract comment metadata"), pkg, obj.Pos())
 	}
+
 	if p.Verbose {
 		fmt.Printf("%s ", s.Name)
 	}
+
 	l := interfaceType.NumMethods()
 	for i := 0; i < l; i++ {
 		m := interfaceType.Method(i)
+
 		method, err := p.parseMethod(pkg, s.Name, m)
 		if err != nil {
 			return s, err
 		}
+
 		s.Methods = append(s.Methods, method)
 	}
+
 	return s, nil
 }
 
 func (p *Parser) parseMethod(pkg *packages.Package, serviceName string, methodType *types.Func) (Method, error) {
-	var m Method
-	m.Name = methodType.Name()
-	m.NameLowerCamel = format.CamelizeDown(m.Name)
-	m.Comment = p.commentForMethod(serviceName, m.Name)
-	var err error
-	m.Metadata, m.Comment, err = p.extractCommentMetadata(m.Comment)
+	var (
+		result Method
+		err    error
+	)
+	result.Name = methodType.Name()
+	result.NameLowerCamel = format.CamelizeDown(result.Name)
+	result.Comment = p.commentForMethod(serviceName, result.Name)
+	result.Metadata, result.Comment, err = p.extractCommentMetadata(result.Comment)
 	if err != nil {
-		return m, p.wrapErr(errors.New("extract comment metadata"), pkg, methodType.Pos())
+		return result, p.wrapErr(errors.New("extract comment metadata"), pkg, methodType.Pos())
 	}
+
 	sig := methodType.Type().(*types.Signature)
 	inputParams := sig.Params()
 	if inputParams.Len() != 1 {
-		return m, p.wrapErr(errors.New("invalid method signature: expected Method(MethodRequest) MethodResponse"), pkg, methodType.Pos())
+		return result, p.wrapErr(errors.New("invalid method signature: expected Method(MethodRequest) MethodResponse"), pkg, methodType.Pos())
 	}
-	m.InputObject, err = p.parseFieldType(pkg, inputParams.At(0))
+
+	result.InputObject, err = p.parseFieldType(pkg, inputParams.At(0))
 	if err != nil {
-		return m, errors.Wrap(err, "parse input object type")
+		return result, errors.Wrap(err, "parse input object type")
 	}
+
 	outputParams := sig.Results()
 	if outputParams.Len() != 1 {
-		return m, p.wrapErr(errors.New("invalid method signature: expected Method(MethodRequest) MethodResponse"), pkg, methodType.Pos())
+		return result, p.wrapErr(errors.New("invalid method signature: expected Method(MethodRequest) MethodResponse"), pkg, methodType.Pos())
 	}
-	m.OutputObject, err = p.parseFieldType(pkg, outputParams.At(0))
+
+	result.OutputObject, err = p.parseFieldType(pkg, outputParams.At(0))
 	if err != nil {
-		return m, errors.Wrap(err, "parse output object type")
+		return result, errors.Wrap(err, "parse output object type")
 	}
-	p.outputObjects[m.OutputObject.TypeName] = struct{}{}
-	return m, nil
+
+	p.outputObjects[result.OutputObject.TypeName] = struct{}{}
+
+	return result, nil
 }
 
 // parseObject parses a struct type and adds it to the Root.
 func (p *Parser) parseObject(pkg *packages.Package, o types.Object, v *types.Struct) error {
-	var obj Object
+	var (
+		obj Object
+		err error
+	)
 	obj.Name = o.Name()
 	obj.Comment = p.commentForType(obj.Name)
-	var err error
 	obj.Metadata, obj.Comment, err = p.extractCommentMetadata(obj.Comment)
 	if err != nil {
 		return p.wrapErr(errors.New("extract comment metadata"), pkg, o.Pos())
@@ -359,7 +255,7 @@ func (p *Parser) parseObject(pkg *packages.Package, o types.Object, v *types.Str
 		}
 		obj.Fields = append(obj.Fields, field)
 	}
-	p.def.Objects = append(p.def.Objects, obj)
+	p.definition.Objects = append(p.definition.Objects, obj)
 	p.objects[obj.Name] = struct{}{}
 	return nil
 }
@@ -416,10 +312,10 @@ func (p *Parser) parseFieldType(pkg *packages.Package, obj types.Object) (FieldT
 	pkgPath := pkg.PkgPath
 	resolver := func(other *types.Package) string {
 		if other.Name() != pkg.Name {
-			if p.def.Imports == nil {
-				p.def.Imports = make(map[string]string)
+			if p.definition.Imports == nil {
+				p.definition.Imports = make(map[string]string)
 			}
-			p.def.Imports[other.Path()] = other.Name()
+			p.definition.Imports[other.Path()] = other.Name()
 			ftype.Package = other.Path()
 			pkgPath = other.Path()
 			return other.Name()
@@ -511,7 +407,7 @@ func (p *Parser) addOutputFields() error {
 		Example:  "something went wrong",
 	}
 	for typeName := range p.outputObjects {
-		obj, err := p.def.Object(typeName)
+		obj, err := p.definition.Object(typeName)
 		if err != nil {
 			// skip if we can't find it - it must be excluded
 			continue

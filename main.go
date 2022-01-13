@@ -30,18 +30,18 @@ func main() {
 	definitionParser := definition.NewParser(options.Arguments.Input...)
 	exclusions := strings.Split(options.Ignore, ",")
 	if exclusions[0] != "" {
-		definitionParser.ExcludeInterfaces = exclusions
+		definitionParser.Exclusions = exclusions
 	}
 
 	parameters, err := definition.ParseParams(options.Parameters)
 	if err != nil {
-		logError(err)
+		printErr(err)
 		os.Exit(1)
 	}
 
 	rootDefinition, err := definitionParser.ParseWithParams(parameters)
 	if err != nil {
-		logError(err)
+		printErr(err)
 		os.Exit(1)
 	}
 
@@ -51,7 +51,7 @@ func main() {
 
 	template, err := format.LoadTemplateFile(options.Template)
 	if err != nil {
-		logError(err)
+		printErr(err)
 		os.Exit(1)
 	}
 
@@ -59,7 +59,7 @@ func main() {
 	if options.Output != "" {
 		outputFile, err := os.Create(options.Output)
 		if err != nil {
-			logError(err)
+			printErr(err)
 			os.Exit(1)
 		}
 
@@ -68,10 +68,10 @@ func main() {
 	}
 
 	if err := template.Execute(output, rootDefinition); err != nil {
-		logError(err)
+		printErr(err)
 	}
 }
 
-func logError(err error) {
+func printErr(err error) {
 	_, _ = fmt.Fprintln(os.Stderr, err)
 }

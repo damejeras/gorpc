@@ -16,7 +16,7 @@ func TestParse(t *testing.T) {
 	patterns := []string{"./testdata/services/pleasantries"}
 	parser := NewParser(patterns...)
 	parser.Verbose = testing.Verbose()
-	parser.ExcludeInterfaces = []string{"Ignorer"}
+	parser.Exclusions = []string{"Ignorer"}
 	def, err := parser.parse()
 	is.NoErr(err)
 	is.Equal(def.PackageName, "pleasantries")
@@ -237,7 +237,7 @@ func TestObjectIsInputOutput(t *testing.T) {
 	patterns := []string{"./testdata/services/pleasantries"}
 	parser := NewParser(patterns...)
 	parser.Verbose = testing.Verbose()
-	parser.ExcludeInterfaces = []string{"Ignorer"}
+	parser.Exclusions = []string{"Ignorer"}
 	def, err := parser.parse()
 	is.NoErr(err)
 
