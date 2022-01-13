@@ -19,7 +19,7 @@ func TestTemplatesAgainstGoldenFiles(t *testing.T) {
 		filename := files[i].Name()
 
 		goldenFileContent, err := ioutil.ReadFile(
-			filepath.Join("./test", "golden-files", strings.Replace(filename, ".tmpl", ".golden", 1)),
+			filepath.Join("./testdata/golden-files", strings.Replace(filename, ".tmpl", ".golden", 1)),
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -35,7 +35,7 @@ func TestTemplatesAgainstGoldenFiles(t *testing.T) {
 			"--template", filepath.Join("templates", filename),
 			"--package", "main",
 			"--output", outputFile.Name(),
-			"./test/services/pleasantries",
+			"./testdata/services/pleasantries",
 		}
 
 		main()

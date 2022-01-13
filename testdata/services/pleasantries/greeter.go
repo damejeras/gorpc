@@ -1,7 +1,7 @@
 package pleasantries
 
 import (
-	"github.com/damejeras/gorpc/test/services"
+	"github.com/damejeras/gorpc/testdata/services"
 )
 
 // GreeterService is a polite API.

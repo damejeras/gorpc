@@ -15,7 +15,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	services "github.com/damejeras/gorpc/test/services"
+	services "github.com/damejeras/gorpc/testdata/services"
 )
 
 // Client is used to access Pace services.
