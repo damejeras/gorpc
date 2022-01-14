@@ -1,0 +1,113 @@
+{{ $namespace := index .Params "namespace" }}
+
+{{ begin_file "AbstractService.php" }}<?php
+
+namespace {{ $namespace }};
+
+use Exception;
+
+abstract class AbstractService {
+    private string $host, $apiKey, $secretKey;
+
+    public function __construct(string $host, string $apiKey, string $secretKey)
+    {
+        $this->host = $host;
+		$this->apiKey = $apiKey;
+		$this->secretKey = $secretKey;
+	}
+
+	/**
+	* @throws Exception
+	*/
+	protected function send(string $service, string $procedure, $payload): string
+	{
+		$curl = curl_init("$this->host/$service.$procedure");
+
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $payload);
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($curl, CURLOPT_HTTPHEADER, [
+		'Content-Type: application/json',
+		'X-API-KEY: ' . $this->apiKey,
+		'X-API-SIGNATURE: ' . hash_hmac('sha256', $payload, $this->secretKey)
+		]);
+
+		$result = curl_exec($curl);
+
+		if (curl_getinfo($curl, CURLINFO_HTTP_CODE) != 200) {
+			curl_close($curl);
+
+			$body = json_decode($result, true);
+			if (isset($body['error'])) {
+				throw new Exception($body['error']);
+			}
+
+			throw new Exception("$service.$procedure call failed unexpectedly");
+		}
+
+		curl_close($curl);
+
+		return $result;
+	}
+
+	/**
+	* @throws Exception
+	*/
+	protected function encode($request): string
+	{
+		$payload = json_encode($request);
+		if (!$payload) {
+			throw new Exception(json_last_error_msg());
+		}
+
+		return $payload;
+	}
+}
+{{ end_file "AbstractService.php" }}
+
+{{ begin_file "AbstractResponse.php" }}<?php
+
+namespace {{ $namespace }};
+
+abstract class AbstractResponse {
+    public function __construct($payload)
+    {
+        foreach (json_decode($payload, true) as $key => $value) $this->{$key} = $value;
+	}
+}
+{{ end_file "AbstractResponse.php" }}
+
+{{ range $service := .Services }}
+{{ begin_file $service.Name ".php" }}<?php
+
+namespace {{ $namespace }};
+
+use Exception;
+
+{{ format_comment_text $service.Comment }}class {{ $service.Name }} extends AbstractService {
+    {{ range $method := $service.Methods }}/**
+     * @throws Exception
+     * {{ format_comment_line $method.Comment }}
+     */
+    public function {{ camelize_down $method.Name }}({{ $method.InputObject.TypeName }} $request): {{ $method.OutputObject.TypeName }}
+    {
+        return new {{ $method.OutputObject.TypeName }}(
+            $this->send('{{ $service.Name }}', '{{ $method.Name }}', $this->encode($request))
+		);
+	}{{ end }}
+}
+{{ end_file $service.Name ".php" }}
+{{ end }}
+
+
+{{ range $object := .Objects }}
+{{ begin_file $object.Name ".php" }}<?php
+
+namespace {{ $namespace }};
+
+{{ if not $object.Imported }}{{ format_comment_text $object.Comment }}class {{ $object.Name }} {{ if is_output $object.Name }}extends AbstractResponse {{end}}{
+{{ range $field := $object.Fields }}{{ if ne $field.Name "Error" }}	// {{ format_comment_line $field.Comment }}
+	public {{if $field.Type.Multiple }}array{{ else }}{{ if $field.Type.IsPointer }}?{{end}}{{ $field.Type.PHPType }}{{ end }} ${{ camelize_down $field.Name }};{{ end }}
+{{ end }}
+}{{ end }}
+{{ end_file $object.Name ".php" }}
+{{ end }}
