@@ -49,7 +49,11 @@ func main() {
 		rootDefinition.PackageName = options.Package
 	}
 
-	template, err := format.LoadTemplateFile(options.Template)
+	template, err := format.LoadTemplateFile(
+		options.Template,
+		format.WithTemplateFunc("is_input", rootDefinition.ObjectIsInput),
+		format.WithTemplateFunc("is_output", rootDefinition.ObjectIsOutput),
+	)
 	if err != nil {
 		printErr(err)
 		os.Exit(1)

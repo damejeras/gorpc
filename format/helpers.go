@@ -4,25 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"go/doc"
-	"path/filepath"
 	"strings"
-	"text/template"
 
 	"github.com/fatih/structtag"
 	"github.com/pkg/errors"
 )
-
-func LoadTemplateFile(path string) (*template.Template, error) {
-	return template.New(filepath.Base(path)).Funcs(map[string]interface{}{
-		"camelize_down":       CamelizeDown,
-		"camelize_up":         CamelizeUp,
-		"json":                toJSONHelper,
-		"format_comment_line": commentLine,
-		"format_comment_text": commentText,
-		"format_comment_html": commentHTML,
-		"format_tags":         tags,
-	}).ParseFiles(path)
-}
 
 func toJSONHelper(v interface{}) (string, error) {
 	b, err := json.MarshalIndent(v, "", "\t")
