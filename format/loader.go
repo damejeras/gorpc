@@ -18,6 +18,8 @@ func LoadTemplateFile(path string, options ...Option) (*template.Template, error
 		"format_comment_text": commentText,
 		"format_comment_html": commentHTML,
 		"format_tags":         tags,
+		"begin_file":          beginFile,
+		"end_file":            endFile,
 	}}
 
 	for i := range options {
