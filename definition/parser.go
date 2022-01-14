@@ -328,13 +328,14 @@ func (p *Parser) parseFieldType(pkg *packages.Package, obj types.Object) (FieldT
 		typ = slice.Elem()
 		ftype.Multiple = true
 	}
-	isPointer := true
+
 	originalTyp := typ
 	pointerType, isPointer := typ.(*types.Pointer)
 	if isPointer {
 		typ = pointerType.Elem()
 		isPointer = true
 	}
+
 	if named, ok := typ.(*types.Named); ok {
 		if structure, ok := named.Underlying().(*types.Struct); ok {
 			if err := p.parseObject(pkg, named.Obj(), structure); err != nil {
@@ -343,6 +344,7 @@ func (p *Parser) parseFieldType(pkg *packages.Package, obj types.Object) (FieldT
 			ftype.IsObject = true
 		}
 	}
+
 	// disallow nested structs
 	switch typ.(type) {
 	case *types.Struct:
@@ -353,6 +355,7 @@ func (p *Parser) parseFieldType(pkg *packages.Package, obj types.Object) (FieldT
 	ftype.ObjectNameLowerCamel = format.CamelizeDown(ftype.ObjectName)
 	ftype.TypeID = pkgPath + "." + ftype.ObjectName
 	ftype.CleanObjectName = strings.TrimPrefix(ftype.TypeName, "*")
+	ftype.IsPointer = isPointer
 	ftype.TSType = ftype.CleanObjectName
 	ftype.JSType = ftype.CleanObjectName
 	ftype.SwiftType = ftype.CleanObjectName
@@ -365,24 +368,29 @@ func (p *Parser) parseFieldType(pkg *packages.Package, obj types.Object) (FieldT
 			ftype.JSType = "any"
 			ftype.SwiftType = "Any"
 			ftype.TSType = "object"
+			ftype.PHPType = "mixed"
 		case "map[string]interface{}":
 			ftype.JSType = "object"
 			ftype.TSType = "object"
 			ftype.SwiftType = "Any"
+			ftype.PHPType = "array"
 		case "string":
 			ftype.JSType = "string"
 			ftype.SwiftType = "String"
 			ftype.TSType = "string"
+			ftype.PHPType = "string"
 		case "bool":
 			ftype.JSType = "boolean"
 			ftype.SwiftType = "Bool"
 			ftype.TSType = "boolean"
+			ftype.PHPType = "bool"
 		case "int", "int16", "int32", "int64",
 			"uint", "uint16", "uint32", "uint64",
 			"float32", "float64":
 			ftype.JSType = "number"
 			ftype.SwiftType = "Double"
 			ftype.TSType = "number"
+			ftype.PHPType = "float"
 		}
 	}
 

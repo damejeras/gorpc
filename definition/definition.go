@@ -111,6 +111,7 @@ type FieldType struct {
 	TypeID     string `json:"typeID"`
 	TypeName   string `json:"typeName"`
 	ObjectName string `json:"objectName"`
+	IsPointer  bool   `json:"isPointer"`
 	// CleanObjectName is the ObjectName with * removed for pointer types.
 	CleanObjectName      string `json:"cleanObjectName"`
 	ObjectNameLowerCamel string `json:"objectNameLowerCamel"`
@@ -120,6 +121,7 @@ type FieldType struct {
 	JSType               string `json:"jsType"`
 	TSType               string `json:"tsType"`
 	SwiftType            string `json:"swiftType"`
+	PHPType              string `json:"phpType"`
 }
 
 // IsOptional returns true for pointer types (optional).
