@@ -38,18 +38,18 @@ package definition
 
 // GreeterService is service definition.
 type GreeterService interface {
-  // SayHello ends a greeting
-  SayHello(HelloRequest) HelloResponse
+	// SayHello ends a greeting
+	SayHello(HelloRequest) HelloResponse
 }
 
 // HelloRequest message containing the user's name.
 type HelloRequest struct {
-  Name string
+	Name string
 }
 
 // HelloResponse message containing the greetings
 type HelloResponse struct {
-  Greeting string
+	Greeting string
 }
 ```
 
@@ -66,7 +66,8 @@ gofmt -w server.go server.go
 By now you should have `server.go` containing `GreeterService` interface, `HelloRequest` and `HelloResponse` structs.
 
 ### Write server implementation
-1. Create `main.go`:
+1. Create `main.go` file:
+
 ```go
 package main
 
