@@ -1,37 +1,130 @@
-## Welcome to GitHub Pages
+## Quick start
+This guide will get you started with goRPC by providing a simple working example.
+You will learn how to make server and client using goRPC.
 
-You can use the [editor on GitHub](https://github.com/damejeras/gorpc/edit/main/docs/index.md) to maintain and preview the content for your website in Markdown files.
+### Prerequisites
+* Go v1.13 or newer. For installation instructions, see [Go’s Getting Started](https://golang.org/doc/install) guide.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+### Install tool
+```shell
+go install github.com/damejeras/gorpc@latest
 ```
 
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
+### Initiate project
+Create a project and get `transport` library:
+```shell
+mkdir gorpc-example
+cd gorpc-example
+go mod init gorpc-example
+go get github.com/damejeras/gorpc/transport
+```
 
-### Jekyll Themes
+### Create service definition
+Create `definition/greeter.go` with service definition:
+```go
+package definition
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/damejeras/gorpc/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+// GreeterService is service definition.
+type GreeterService interface {
+  // SayHello ends a greeting
+  SayHello(HelloRequest) HelloResponse
+}
 
-### Support or Contact
+// HelloRequest message containing the user's name.
+type HelloRequest struct {
+  Name string
+}
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+// HelloResponse message containing the greetings
+type HelloResponse struct {
+  Greeting string
+}
+```
+
+### Generate server interface
+Fetch server template:
+```shell
+wget https://raw.githubusercontent.com/damejeras/gorpc/main/templates/server.go.tmpl
+```
+Generate server interface and format it with `gofmt`:
+```shell
+gorpc --template=server.go.tmpl --package main definition/greeter.go --output server.go
+gofmt -w server.go server.go
+```
+By now you should have `server.go` containing `GreeterService` interface, `HelloRequest` and `HelloResponse` structs.
+
+### Write server implementation
+1. Create `main.go`:
+```go
+package main
+
+import (
+	"context"
+	"log"
+	"net/http"
+
+	"github.com/damejeras/gorpc/transport"
+)
+
+type greeterService struct{}
+
+func (g greeterService) SayHello(ctx context.Context, request HelloRequest) (*HelloResponse, error) {
+	return &HelloResponse{
+		Greeting: "Hello " + request.Name,
+	}, nil
+}
+
+func main() {
+	server := transport.NewServer()
+	RegisterGreeterService(server, greeterService{})
+
+	if err := http.ListenAndServe(":8000", server); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+2. Run server with `go run .`.
+
+### Generate client code
+1. Make client package directory:
+```shell
+mkdir client
+```
+2. Fetch client's template:
+```shell
+wget https://raw.githubusercontent.com/damejeras/gorpc/main/templates/client.go.tmpl
+```
+3. Generate client code:
+```shell
+gorpc --template=client.go.tmpl --package main definition/greeter.go --output client/client.go
+gofmt -w client/client.go client/client.go
+```
+
+
+### Test your client
+To test generated client create `client/main.go`:
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+)
+
+func main() {
+	client := New("http://localhost:8000/")
+	service := NewGreeterService(client)
+	resp, err := service.SayHello(context.Background(), HelloRequest{Name: "Joe"})
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(resp.Greeting)
+}
+```
+
+Run client with:
+```shell
+go run ./client
+Hello Joe
+```
