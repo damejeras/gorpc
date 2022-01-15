@@ -1,3 +1,15 @@
+# goRPC
+
+Minimalist RPC framework for Go. Write your service definitions in Go and generate anything from it.
+
+Currently, goRPC provides client templates for:
+* Go
+* PHP
+* TypeScript
+* Swift
+* JavaScript
+* Python
+
 ## Quick start
 This guide will get you started with goRPC by providing a simple working example.
 You will learn how to make server and client using goRPC.
@@ -100,7 +112,6 @@ gorpc --template=client.go.tmpl --package main definition/greeter.go --output cl
 gofmt -w client/client.go client/client.go
 ```
 
-
 ### Test your client
 To test generated client create `client/main.go`:
 ```go
@@ -128,3 +139,8 @@ Run client with:
 go run ./client
 Hello Joe
 ```
+
+
+## Contributions
+
+`goRPC` is a fork of https://github.com/pacedotdev/oto. Thank you to all developers that brought this fantastic project to the world.
