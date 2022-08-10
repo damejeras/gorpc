@@ -2,6 +2,7 @@ package format
 
 import (
 	"path/filepath"
+	"strings"
 	"text/template"
 )
 
@@ -20,6 +21,9 @@ func LoadTemplateFile(path string, options ...Option) (*template.Template, error
 		"format_tags":         tags,
 		"begin_file":          beginFile,
 		"end_file":            endFile,
+		"contains":            strings.Contains,
+		"hasPrefix":           strings.HasPrefix,
+		"hasSuffix":           strings.HasSuffix,
 	}}
 
 	for i := range options {
