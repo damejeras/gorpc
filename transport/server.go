@@ -3,11 +3,10 @@ package transport
 import (
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 type Server interface {
@@ -17,21 +16,25 @@ type Server interface {
 	Register(service, method string, h http.HandlerFunc)
 }
 
+type Middleware func(http.Handler) http.Handler
+
 type server struct {
 	routes          map[string]http.Handler
 	notFoundHandler http.Handler
 	errHandler      ErrorHandler
 	pathFn          func(service, method string) string
+	mw              []Middleware
 }
 
 func NewServer(options ...Option) Server {
 	srv := &server{
 		routes:          make(map[string]http.Handler),
 		notFoundHandler: http.NotFoundHandler(),
-		errHandler:      defaultErrorHandler,
+		errHandler:      DefaultErrorHandler,
 		pathFn: func(service, method string) string {
 			return "/" + service + "." + method
 		},
+		mw: make([]Middleware, 0),
 	}
 
 	for i := range options {
@@ -63,13 +66,17 @@ func (s *server) OnErr(w http.ResponseWriter, r *http.Request, err error) {
 }
 
 func (s *server) Register(service, method string, handler http.HandlerFunc) {
-	s.routes[s.pathFn(service, method)] = handler
+	if len(s.mw) > 0 {
+		s.routes[s.pathFn(service, method)] = chainMiddleware(handler, s.mw...)
+	} else {
+		s.routes[s.pathFn(service, method)] = handler
+	}
 }
 
 func Encode(w http.ResponseWriter, r *http.Request, status int, payload interface{}) error {
 	bodyBytes, err := json.Marshal(payload)
 	if err != nil {
-		return errors.Wrap(err, "marshal payload")
+		return fmt.Errorf("marshal payload: %w", err)
 	}
 
 	var out io.Writer = w
@@ -84,16 +91,31 @@ func Encode(w http.ResponseWriter, r *http.Request, status int, payload interfac
 	w.WriteHeader(status)
 
 	if _, err := out.Write(bodyBytes); err != nil {
-		return err
+		return fmt.Errorf("write body: %w", err)
 	}
 
 	return nil
 }
 
 func Decode(r *http.Request, v interface{}) error {
+	if r.Header.Get("Content-type") != "application/json" {
+		return ClientError{
+			Code:    http.StatusUnsupportedMediaType,
+			Message: "application/json content-type expected",
+		}
+	}
+
 	if err := json.NewDecoder(io.LimitReader(r.Body, 1024*1024)).Decode(v); err != nil {
-		return errors.Wrap(err, "decode request body")
+		return fmt.Errorf("decode request body: %w", err)
 	}
 
 	return r.Body.Close()
+}
+
+func chainMiddleware(handle http.Handler, mw ...Middleware) http.Handler {
+	for i := range mw {
+		handle = mw[len(mw)-1-i](handle)
+	}
+
+	return handle
 }

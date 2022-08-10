@@ -1,21 +1,14 @@
 package transport
 
 import (
-	"net/http"
 	"strings"
 )
 
 type Option func(*server)
 
-func WithNotFoundHandler(notFoundHandler http.Handler) Option {
+func WithErrorHandler(handler ErrorHandler) Option {
 	return func(s *server) {
-		s.notFoundHandler = notFoundHandler
-	}
-}
-
-func WithErrorHandler(errHandler ErrorHandler) Option {
-	return func(s *server) {
-		s.errHandler = errHandler
+		s.errHandler = handler
 	}
 }
 
@@ -26,5 +19,11 @@ func WithPathPrefix(prefix string) Option {
 		s.pathFn = func(service, method string) string {
 			return "/" + trimmedPrefix + "/" + service + "." + method
 		}
+	}
+}
+
+func WithMiddleware(mw Middleware) Option {
+	return func(s *server) {
+		s.mw = append(s.mw, mw)
 	}
 }
